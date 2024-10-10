@@ -6,7 +6,8 @@ import { defineProps, ref, computed, onMounted, watch } from 'vue';
 import axios from 'axios';
 import CustomerDetails from '@/Components/CustomerDetails.vue';
 const props = defineProps({
-  customers: Array
+  customers: Array,
+  categories: Array
 });
 
 const searchText = ref('');
@@ -14,6 +15,7 @@ const selectedCategory = ref('');
 const categories = ref(props.categories);
 const customerList = ref(props.customers);
 const currentCustomer = ref(null);
+
 
 const filteredCustomers = computed(() => {
   return customerList.value.filter(customer => {
@@ -69,9 +71,6 @@ const toggleModal = () => {
   isModalVisible.value = !isModalVisible.value;
 };
 
-onMounted(() => {
-  categories.value = [...new Set(customerList.value.map(customer => customer.category))].sort();
-});
 
 watch(searchText, () => {
   debouncedFetchCustomers();

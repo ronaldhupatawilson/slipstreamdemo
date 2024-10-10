@@ -12,7 +12,6 @@ const props = defineProps({
 const emit = defineEmits(['update:customer', 'update:categories', 'closeModal']);
 
 const contacts = ref([]);
-const selectedCategory = ref(null);
 
 const showContactModal = ref(false);
 const currentContact = ref(null);
@@ -80,6 +79,20 @@ function closeContactModal() {
 function handleContactDetailsClose() {
   closeContactModal();
 }
+
+async function deleteContact(contactId) {
+  const confirmed = confirm('Are you sure you want to delete this contact?');
+  if (!confirmed) return;
+
+  try {
+    await axios.post('/contact/delete', { id: contactId });
+    console.log('Contact deleted successfully');
+    // Remove the contact from the contacts list
+    contacts.value = contacts.value.filter(contact => contact.id !== contactId);
+  } catch (error) {
+    console.error('Error deleting contact:', error);
+  }
+};
 </script>
 
 <template>
@@ -107,8 +120,8 @@ function handleContactDetailsClose() {
             </div>
             <div class="w-full flex flex-col mt-4">
                 <div for="catagory_id" class="text-lg">Category:</div>
-                <select id="catagory_id"  class="w-full border border-gray-300 rounded-md" v-model="selectedCategory" @change="updateCategories(selectedCategory)">
-                <option v-for="category in categories" :key="category.id" :value="category.id">1{{ category.category }}1</option>
+                <select id="catagory_id"  class="w-full border border-gray-300 rounded-md" value="customer.category_id" @change="updateCustomerField('category_id', $event.target.value)">
+                <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.category }}</option>
                 </select>
             </div>
 
@@ -117,11 +130,11 @@ function handleContactDetailsClose() {
             <div class="text-[#1D78E6] text-2xl mb-1">Details</div>
             <div class="w-full flex flex-col">
                 <div class="text-lg">Start Date</div>
-                <input class="w-full border border-gray-200 rounded-md" v-model="customer.startDate" type="date" />
+                <input class="w-full border border-gray-200 rounded-md" value="customer.startDate" type="date" @change="updateCustomerField('startDate', $event.target.value)" />
             </div>
             <div class="w-full flex flex-col mt-4">
                 <div class="text-lg">Description</div>
-                <textarea class="w-full border border-gray-200 rounded-md bg-white" :value="customer.notes" @input="updateCustomerField('notes', $event.target.value)"></textarea>
+                <textarea class="w-full border border-gray-200 rounded-md bg-white" @input="updateCustomerField('description', $event.target.value)">{{ customer.description }}</textarea>
             </div>
 
         </div>
@@ -150,7 +163,7 @@ function handleContactDetailsClose() {
                 <button @click="openContactModal(contact)" class="edit-button">
                   <PencilSquareIcon class="h-5 w-5 mr-2 text-blue-500" />
                 </button>
-                <button @click="handleDelete(customer)" class="edit-button">
+                <button @click="deleteContact(contact.id)" class="edit-button">
                   <TrashIcon class="h-5 w-5 mr-2 text-red-500" />
                 </button>
               </div></td>
@@ -162,7 +175,7 @@ function handleContactDetailsClose() {
       <!-- Modal for Contact Details -->
       <div v-if="showContactModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center">
         <div class="bg-white p-4 rounded-md shadow-lg w-1/2">
-          <!-- <ContactDetails :contact="currentContact" @close="handleContactDetailsClose" /> -->
+          <ContactDetails :contact="currentContact" :customerId="customer.id" @close="handleContactDetailsClose" />
         </div>
       </div>
       

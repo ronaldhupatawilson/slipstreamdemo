@@ -35,7 +35,7 @@ class CustomerController extends Controller
 
         return inertia("Customers", [
             "customers" => $customers,
-            "categories" => CategoryResource::collection($categories)
+            "categories" => $categories
         ]);
     }
 
@@ -47,7 +47,7 @@ class CustomerController extends Controller
      */
     public function search($searchText)
     {
-        $customerSql = "select customers.id as id, name, reference, category, category_id, startDate, description, (select count(*) from contacts where contacts.customer_id = customers.id) as contactscount
+        $customerSql = "select customers.id as id, name, reference, category, category_id, DATE_FORMAT(startDate, '%d/%m/%Y') as startDate, description, (select count(*) from contacts where contacts.customer_id = customers.id) as contactscount
         from customers
         left join categories on categories.id = customers.category_id
         where name like '%?%' or reference like '%?%' or category like '%?%' or startDate like '%?%'

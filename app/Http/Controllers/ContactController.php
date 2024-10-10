@@ -18,13 +18,8 @@ class ContactController extends Controller
     public function store(ContactRequest $request)
     {
         $data = $request->validated();
-       
-        Contact::create($data);
-        
-        $previousRoute = session()->pull('previous_route', ['name' => 'contact.index', 'params' => []]);
-
-        return to_route($previousRoute['name'], $previousRoute['params'])
-            ->with('success', 'Contact was created');
+        $contact = Contact::create($data);
+        return response()->json($contact);
     }
 
 
@@ -33,16 +28,14 @@ class ContactController extends Controller
      */
     public function destroy(Contact $contact)
     {
-        $name = $contact->name;
-        $contact->delete();
-        if ($contact->image_path) {
-            Storage::disk('public')->deleteDirectory(dirname($contact->image_path));
+        $contactId = request()->input('id');
+        $contact = Contact::find($contactId);
+        try {
+            $contact->delete();
+            return response()->json(['success' => true, 'message' => 'Customer deleted'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Failed to delete contact'], 500);
         }
-        $referrer = url()->previous();
-        $route = app('router')->getRoutes()->match(request()->create($referrer));
-
-        return to_route($route->getName(), $route->parameters())
-            ->with('success', "Contact \"$name\" was deleted");
     }
 }
     
