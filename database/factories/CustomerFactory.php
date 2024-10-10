@@ -10,12 +10,12 @@ class CustomerFactory extends Factory
     public function definition(): array
     {
         return [
-            'id' => fake()->numberBetween(1, 300),
-            'name' => fake()->text(255),
-            'reference' => fake()->sentence(),
-            'category_id' => fake()->numberBetween(1, 300),
+            //'id' => fake()->numberBetween(1, 300),
+            'name' => fake()->company(),
+            'reference' => fake()->text(10),
+            'category_id' => fake()->numberBetween(1, 3),
             'startDate' => fake()->date(),
-            'description' => fake()->sentence(),
+            'description' => fake()->paragraph(),
 
         ];
     }

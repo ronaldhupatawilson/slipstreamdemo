@@ -18,13 +18,6 @@ return new class extends Migration
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
         });
-
-        // Insert default data
-        DB::table('categories')->insert([
-            ['id' => 1, 'category' => 'Gold', 'created_at' => '2024-10-10 13:55:41', 'updated_at' => '2024-10-10 13:55:41'],
-            ['id' => 2, 'category' => 'Silver', 'created_at' => '2024-10-10 13:55:44', 'updated_at' => '2024-10-10 13:55:44'],
-            ['id' => 3, 'category' => 'Bronze', 'created_at' => '2024-10-10 13:55:48', 'updated_at' => '2024-10-10 13:55:48'],
-        ]);
     }
     
     /**

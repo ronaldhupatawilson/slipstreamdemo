@@ -18,6 +18,7 @@
         "vue": "^3.4.0"
     },
     "dependencies": {
+        "@heroicons/vue": "^2.1.5",
         "@inertiajs/vue3": "^1.2.0",
         "@mdi/font": "^7.4.47",
         "vite-plugin-vuetify": "^2.0.4",

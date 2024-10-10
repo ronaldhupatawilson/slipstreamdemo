@@ -4,88 +4,82 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
+use App\Models\Category;
+use App\Models\Contact;
 use App\Http\Requests\CustomerRequest;
 use App\Http\Resources\CustomerResource;
 use App\Http\Requests\CategoryRequest;
 use App\Http\Resources\CategoryResource;
-use App\Models\Category;
 use App\Http\Requests\ContactRequest;
 use App\Http\Resources\ContactResource;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class CustomerController extends Controller
 {
     /**
-     * Display a listing customer.
+     * Display a listing of customers.
      *
      * @return \Illuminate\Http\Response
      */
     public function index()
     {
-        $sortField = request("sort_field", 'created_at');
-        $sortDirection = request("sort_direction", "desc");
-        $query = Customer::query();
+        $customerSql = "select customers.id as id, name, reference, category, (select count(*) from contacts where contacts.customer_id = customers.id) as contactscount
+        from customers
+        left join categories on categories.id = customers.category_id
+        ";
+        $customers = DB::select($customerSql);
 
- 
-        $query->leftJoin('categories','categories.id', '=', 'customers.category_id')
-            ->select ('customers.*', 'categories.category as categoriescategory');
-
-        if (request('name')) {
-            $query->where("name", "like", "%" . request("name") ."%");
-        }
-        if (request('reference')) {
-            $query->where("reference", "like", "%" . request("reference") ."%");
-        }
-        if (request('startDate')) {
-            $query->where("startDate", request("startDate"));
-        }
-        if (request('description')) {
-            $query->where("description", "like", "%" . request("description") ."%");
-        }
-
-        if (request('categoriescategory')) {
-                $query->where("categories.category", "like", "%" . request("categoriescategory") ."%");
-        }
-
-
-        $customers = $query->orderBy($sortField, $sortDirection)
-            ->paginate(20)
-            ->onEachSide(1);
-
-        return inertia("Customer/Index", [
-            "customers" => CustomerResource::collection($customers),
-
-            'queryParams' => request()->query() ?: null,
-            'success' => session('success'),
-        ]);
-    }
-
-    
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
         $categories = Category::query()->orderBy('category', 'asc')->get();
 
 
-        $referrer = url()->previous();
-        $route = app('router')->getRoutes()->match(request()->create($referrer));
-        
-        session()->put('previous_route', [
-            'name' => $route->getName(),
-            'params' => $route->parameters()
-        ]);
-
-        return inertia("Customer/Create", [
-            'categories' => CategoryResource::collection($categories)
-
+        return inertia("Customers", [
+            "customers" => $customers,
+            "categories" => CategoryResource::collection($categories)
         ]);
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Search for customers based on the provided search text.
+     *
+     * @param string $searchText
+     * @return \Illuminate\Http\Response
      */
-    public function store(CustomerRequest $request)
+    public function search($searchText)
+    {
+        $customerSql = "select customers.id as id, name, reference, category, category_id, startDate, description, (select count(*) from contacts where contacts.customer_id = customers.id) as contactscount
+        from customers
+        left join categories on categories.id = customers.category_id
+        where name like '%?%' or reference like '%?%' or category like '%?%' or startDate like '%?%'
+        ";
+        $customers = DB::select($customerSql,[$searchText, $searchText, $searchText, $searchText]);
+        return inertia("Customers", [
+            "customers" => $customers,
+            "searchText" => $searchText
+        ]);
+    }
+
+    /**
+     * Retrieve contacts for a specific customer.
+     *
+     * @param int $customerId
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getCustomerContacts($customerId)
+    {
+        $contacts = Contact::where('customer_id', $customerId)->get();
+        return response()->json($contacts);
+    }
+
+
+
+    /**
+     * Store a newly created customer in storage.
+     *
+     * @param \App\Http\Requests\CustomerRequest $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function store()
     {
         $data = $request->validated();
        
@@ -97,68 +91,15 @@ class CustomerController extends Controller
             ->with('success', 'Customer was created');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Customer $customer)
-    {
-        $query = $customer->contacts();
-        $contacts_sortField = request("contacts_sort_field", 'id');
-        $contacts_sortDirection = request("contacts_sort_direction", "desc");
-        $contacts = $query->orderBy($contacts_sortField, $contacts_sortDirection)
-            ->paginate(20)
-            ->onEachSide(1);
-            
-
-        $query = Customer::query();
-
-        $query->leftJoin('categories','categories.id', '=', 'customers.category_id')
-            ->select ('customers.*', 'categories.category as categorycategories');
-        $query->where('customers.id', $customer->id);
-        $customerData = $query->first();
-        
-        
-        
-        
-        return inertia("Customer/Show", [
-            "customer" => new CustomerResource($customerData),
-            'contacts' => ContactResource::collection($contacts),
-
-            'queryParams' => request()->query() ?: null
-]);
-    }
 
     /**
-     * Show the form for editing the specified resource.
+     * Update the specified customer in storage.
+     *
+     * @param \App\Http\Requests\CustomerRequest $request
+     * @param \App\Models\Customer $customer
+     * @return \Illuminate\Http\RedirectResponse
      */
-    public function edit(Customer $customer)
-    {
-        $query = Customer::query();
-        $query->leftJoin('categories','categories.id', '=', 'customers.category_id')
-            ->select ('customers.*', 'categories.category as categoriescategory');
-        $query->where('customers.id', $customer->id);
-        $customerData = $query->first();
-        
-        $referrer = url()->previous();
-        $route = app('router')->getRoutes()->match(request()->create($referrer));
-        
-        session()->put('previous_route', [
-            'name' => $route->getName(),
-            'params' => $route->parameters()
-        ]);
-
-        $categories = Category::query()->orderBy('category', 'asc')->get();
-
-        return inertia("Customer/Edit", [
-            "customer" => new CustomerResource($customerData),
-           'categories' => CategoryResource::collection($categories),
-        ]);
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(CustomerRequest $request, Customer $customer)
+    public function update($customerId)
     {
         $data = $request->validated();
         $customer->update($data);
@@ -170,20 +111,19 @@ class CustomerController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove the specified customer from storage.
+     *
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function destroy(Customer $customer)
+    public function destroy()
     {
-        $name = $customer->name;
-        $customer->delete();
-        if ($customer->image_path) {
-            Storage::disk('public')->deleteDirectory(dirname($customer->image_path));
+        $customerId = request()->input('id');
+        $customer = Customer::find($customerId);
+        try {
+            $customer->delete();
+            return response()->json(['success' => true, 'message' => 'Customer deleted'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Failed to delete customer'], 500);
         }
-        $referrer = url()->previous();
-        $route = app('router')->getRoutes()->match(request()->create($referrer));
-
-        return to_route($route->getName(), $route->parameters())
-            ->with('success', "Customer \"$name\" was deleted");
     }
 }
-    

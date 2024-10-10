@@ -10,10 +10,10 @@ class ContactFactory extends Factory
     public function definition(): array
     {
         return [
-            'id' => fake()->numberBetween(1, 300),
+            //'id' => fake()->numberBetween(1, 300),
             'customer_id' => fake()->numberBetween(1, 300),
-            'firstName' => fake()->text(32),
-            'lastName' => fake()->text(32),
+            'firstName' => fake()->firstName(),
+            'lastName' => fake()->lastName(),
 
         ];
     }

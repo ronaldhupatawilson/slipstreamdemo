@@ -1,28 +1,31 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\ContactController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
+
 Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);
-});
-
-Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+})->name('dashboard');
 
-Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-});
+
+Route::get('/customers', [CustomerController::class, 'index'])
+    ->name('customers');
+
+Route::get('/customers/{searchText}', [CustomerController::class, 'search'])
+->name('customerSearch');
+
+Route::post('/customer/delete', [CustomerController::class, 'destroy'])->name('customers.destroy');
+
+Route::post('/customer/{customerId}/contacts', [CustomerController::class, 'getCustomerContacts'])->name('customers.getCustomerContacts');
+
+Route::post('/customer/store', [CustomerController::class, 'store'])->name('customers.store');
+
+Route::post('/customer/{customerId}/update', [CustomerController::class, 'udpate'])->name('customers.update');
 
 require __DIR__.'/auth.php';
-require __DIR__.'/generated.php';
