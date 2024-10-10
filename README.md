@@ -13,6 +13,8 @@ Intially I installed Laravel Breeze with this build. However, for ease of testin
 
 If you look around you will find models, controllers, resource files, request files, migration files, factory files and a bunch of the vue files amongst other things.
 
+I did have a few questions about why there was a division between General and details and why you had apply and clear buttons but it was too late to expect an answer so I thought I'd just finish it.
+
 I hope it all makes sense.
 
 kind regards,
